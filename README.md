@@ -22,7 +22,6 @@ Django-приложение для управления оборудование
 
 1. Настраиваем окружение:
 ```
-bash
 cd nano_ugin
 python -m venv myvenv
 source myvenv/bin/activate  # Linux/MacOS
@@ -30,8 +29,6 @@ source myvenv/bin/activate  # Linux/MacOS
 
 2. Устанвливаем зависимости:
 ```
-bash
-cd nano_ugin
 pip install -r requirements.txt
 ```
 
@@ -39,32 +36,27 @@ pip install -r requirements.txt
 
 3. Применяем миграции:
 ```
-bash
 python manage.py migrate
 ```
 
 4. Создаём суперпользователя:
 ```
-bash
 python manage.py createsuperuser
 ```
 
 5. При необходимости настраиваем систему (создает тестовые данные):
 ```
-bash
 python setup_system.py
 ```
 
 6. Запускаем сервер:
 ```
-bash
 python manage.py runserver
 ```
 
 ## Автоматическое развертывание (Docker)
 Запускаем автоматический деплой на порту 4545:
 ```
-bash
 ./deploy.sh
 ```
 
@@ -72,40 +64,27 @@ bash
 
 Собираем и запускаем контейнеры:
 ```
-bash
 docker-compose up --build
 ```
 
 Применяем миграции:
 ```
-bash
 docker-compose exec web python manage.py migrate
 ```
 
 Настраиваем систему (создает тестовые данные):
 ```
-bash
 docker-compose exec web python setup_system.py
 ```
 
 Собираем статические файлы:
 ```
-bash
 docker-compose exec web python manage.py collectstatic --noinput
 ```
 
 ## Структура проекта
 ```
 ├── nano_ugin
-│   ├── accounts                    # Приложение аутентификации
-│   │   ├── migrations
-│   │   │   └── __init__.py
-│   │   ├── admin.py
-│   │   ├── apps.py
-│   │   ├── __init__.py
-│   │   ├── models.py
-│   │   ├── tests.py
-│   │   └── views.py
 │   ├── equipment                    # Приложение оборудования
 │   │   ├── templates                # Шаблоны оборудования
 │   │   │   └── equipment
@@ -159,7 +138,6 @@ deploy.sh - Автоматический скрипт развертывания
 
 Запуск:
 ```
-bash
 chmod +x deploy.sh
 ./deploy.sh
 
@@ -174,7 +152,6 @@ setup_system.py
 
 Запуск:
 ```
-bash
 python setup_system.py
 ```
 
