@@ -9,6 +9,7 @@ urlpatterns = [
     
     path('equipment/device/<int:device_id>/edit-parameters/', views.device_edit_parameters, name='device_edit_parameters'),
     path('equipment/device/<int:device_id>/create-parameters/', views.device_create_parameters, name='device_create_parameters'),
+    path('equipment/device/<int:device_id>/delete/', views.device_delete, name='device_delete'),
     
     path('parameters/', views.parameter_list, name='parameter_list'),
     path('parameters/create/', views.parameter_create, name='parameter_create'),

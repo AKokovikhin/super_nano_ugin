@@ -85,6 +85,7 @@ def device_create_parameters(request, device_id):
     return redirect('equipment_web:device_edit_parameters', device_id=device_id)
 
 
+
 @login_required
 @user_passes_test(is_admin)
 def parameter_list(request):
@@ -176,3 +177,12 @@ def device_type_list(request):
     return render(request, 'equipment/device_type_list.html', {
         'device_types': device_types
     })
+
+
+@login_required
+@user_passes_test(is_admin)
+def device_delete(request, device_id):
+    device = get_object_or_404(Device, id=device_id)
+    ParameterValue.objects.filter(device=device).delete()
+    device.delete()
+    return redirect('equipment_web:device_list')

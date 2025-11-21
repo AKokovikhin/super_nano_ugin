@@ -3,6 +3,7 @@
 {% block title %}Список устройств - Nano Ugin{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div id="app">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -11,19 +12,19 @@
         </div>
         <div class="d-flex gap-2">
             <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" name="viewMode" id="viewCards" 
-                       v-model="viewMode" value="cards" autocomplete="off">
+                <input type="radio" class="btn-check" name="viewMode" id="viewCards" v-model="viewMode" value="cards"
+                    autocomplete="off">
                 <label class="btn btn-outline-secondary" for="viewCards">
                     <i class="fas fa-grip"></i> Карточки
                 </label>
-                
-                <input type="radio" class="btn-check" name="viewMode" id="viewList" 
-                       v-model="viewMode" value="list" autocomplete="off">
+
+                <input type="radio" class="btn-check" name="viewMode" id="viewList" v-model="viewMode" value="list"
+                    autocomplete="off">
                 <label class="btn btn-outline-secondary" for="viewList">
                     <i class="fas fa-list"></i> Список
                 </label>
             </div>
-            
+
             <button v-if="userIsStaff" @click="addDevice" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Добавить
             </button>
@@ -50,11 +51,10 @@
                 <div class="col-md-6">
                     <label class="form-label">Поиск</label>
                     <div class="input-group">
-                        <input type="text" v-model="searchQuery" @input="onSearchInput" 
-                               placeholder="Поиск по названию, серийному номеру..." 
-                               class="form-control">
-                        <button @click="clearFilters" class="btn btn-outline-secondary" 
-                                type="button" v-if="hasActiveFilters">
+                        <input type="text" v-model="searchQuery" @input="onSearchInput"
+                            placeholder="Поиск по названию, серийному номеру..." class="form-control">
+                        <button @click="clearFilters" class="btn btn-outline-secondary" type="button"
+                            v-if="hasActiveFilters">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -110,8 +110,8 @@
     </div>
     <div v-else-if="viewMode === 'cards'" class="row">
         <div v-for="device in devices" :key="device.id" class="col-md-6 col-lg-4 mb-4">
-            <div class="card device-card h-100" :class="'status-' + device.status"
-                 @click="openDevice(device.id)" style="cursor: pointer;">
+            <div class="card device-card h-100" :class="'status-' + device.status" @click="openDevice(device.id)"
+                style="cursor: pointer;">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h5 class="card-title">${ device.name }</h5>
@@ -119,11 +119,11 @@
                             ${ getStatusText(device.status) }
                         </span>
                     </div>
-                    
+
                     <h6 class="card-subtitle mb-2 text-muted">
                         <i class="fas fa-tag"></i> ${ device.device_model.name }
                     </h6>
-                    
+
                     <p class="card-text">
                         <small class="text-muted">
                             <i class="fas fa-fingerprint"></i> ${ device.serial_number }
@@ -139,10 +139,16 @@
                         <small class="text-muted">
                             ${ formatDate(device.created_at) }
                         </small>
-                        <button v-if="userIsStaff" @click.stop="editDevice(device.id)" 
+                        <div class="d-flex gap-1 ms-auto"> <!-- ← добавить этот контейнер -->
+                            <button v-if="userIsStaff" @click.stop="editDevice(device.id)"
                                 class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button v-if="userIsStaff" @click.stop="deleteDevice(device.id)"
+                                class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,9 +170,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="device in devices" :key="device.id" 
-                            @click="openDevice(device.id)" style="cursor: pointer;"
-                            class="device-row">
+                        <tr v-for="device in devices" :key="device.id" @click="openDevice(device.id)"
+                            style="cursor: pointer;" class="device-row">
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="status-indicator me-2" :class="'status-' + device.status"></div>
@@ -189,9 +194,12 @@
                                 <small class="text-muted">${ formatDate(device.created_at) }</small>
                             </td>
                             <td v-if="userIsStaff">
-                                <button @click.stop="editDevice(device.id)" 
-                                        class="btn btn-sm btn-outline-secondary">
+                                <button @click.stop="editDevice(device.id)"
+                                    class="me-2 btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-edit"></i>
+                                </button>
+                                <button @click.stop="deleteDevice(device.id)" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-times-circle"></i>
                                 </button>
                             </td>
                         </tr>
@@ -205,24 +213,24 @@
 
 {% block scripts %}
 <script>
-const { createApp } = Vue;
+    const { createApp } = Vue;
 
-createApp({
-    delimiters: ['${', '}'],
-    data() {
-        return {
-            devices: [],
-            deviceTypes: [],
-            loading: true,
-            selectedType: '',
-            selectedStatus: '',
-            searchQuery: '',
-            searchTimeout: null,
-            viewMode: 'cards',
-            userIsStaff: {{ user.is_staff|yesno:"true,false" }}  
-        }
-    },
-    computed: {
+    createApp({
+        delimiters: ['${', '}'],
+        data() {
+            return {
+                devices: [],
+                deviceTypes: [],
+                loading: true,
+                selectedType: '',
+                selectedStatus: '',
+                searchQuery: '',
+                searchTimeout: null,
+                viewMode: 'cards',
+                userIsStaff: {{ user.is_staff|yesno:"true,false" }}
+            }
+        },
+        computed: {
         hasActiveFilters() {
             return this.selectedType || this.selectedStatus || this.searchQuery;
         },
@@ -234,21 +242,21 @@ createApp({
             };
         }
     },
-    mounted() {
+        mounted() {
         this.loadDeviceTypes();
         this.loadDevices();
-        
+
         const savedViewMode = localStorage.getItem('deviceViewMode');
-        if (savedViewMode) {
+        if(savedViewMode) {
             this.viewMode = savedViewMode;
         }
     },
-    watch: {
+        watch: {
         viewMode(newMode) {
             localStorage.setItem('deviceViewMode', newMode);
         }
     },
-    methods: {
+        methods: {
         async loadDeviceTypes() {
             try {
                 const response = await axios.get('/api/device_types/');
@@ -262,13 +270,13 @@ createApp({
             try {
                 let url = '/api/devices/';
                 const params = new URLSearchParams();
-                
+
                 if (this.selectedType) params.append('type', this.selectedType);
                 if (this.selectedStatus) params.append('status', this.selectedStatus);
                 if (this.searchQuery) params.append('search', this.searchQuery);
-                
+
                 if (params.toString()) url += '?' + params.toString();
-                
+
                 const response = await axios.get(url);
                 this.devices = response.data.devices;
             } catch (error) {
@@ -294,6 +302,21 @@ createApp({
         },
         editDevice(deviceId) {
             window.location.href = `/equipment/device/${deviceId}/edit-parameters/`;
+        },
+        deleteDevice(deviceId) {
+            if (confirm('Вы уверены, что хотите удалить это устройство?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/equipment/device/${deviceId}/delete/`;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                csrfInput.type = 'hidden';
+                form.appendChild(csrfInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
         },
         addDevice() {
             window.location.href = '/admin/equipment/device/add/';
@@ -322,48 +345,58 @@ createApp({
 </script>
 
 <style>
-.device-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid #dee2e6;
-}
+    .device-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #dee2e6;
+    }
 
-.device-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+    .device-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
 
-.device-row:hover {
-    background-color: #f8f9fa;
-}
+    .device-row:hover {
+        background-color: #f8f9fa;
+    }
 
-.status-online { border-left: 4px solid #28a745; }
-.status-offline { border-left: 4px solid #dc3545; }
+    .status-online {
+        border-left: 4px solid #28a745;
+    }
 
-.card-title {
-    color: #2c3e50;
-    font-weight: 600;
-}
+    .status-offline {
+        border-left: 4px solid #dc3545;
+    }
 
-.status-indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-}
+    .card-title {
+        color: #2c3e50;
+        font-weight: 600;
+    }
 
-.status-online .status-indicator { background-color: #28a745; }
-.status-offline .status-indicator { background-color: #dc3545; }
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
 
-.table th {
-    border-top: none;
-    font-weight: 600;
-    color: #495057;
-}
+    .status-online .status-indicator {
+        background-color: #28a745;
+    }
 
-.btn-check:checked + .btn-outline-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
+    .status-offline .status-indicator {
+        background-color: #dc3545;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .btn-check:checked+.btn-outline-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: white;
+    }
 </style>
 {% endblock %}
