@@ -9,20 +9,20 @@ services:
       - POSTGRES_DB=nano_ugin
       - POSTGRES_USER=nano_user
       - POSTGRES_PASSWORD=nano_password
-    ports:
-      - "5432:5432"
+
 
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
+    working_dir: /app/nano_ugin
     ports:
       - "4545:8000"
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/nano_ugin
+      - DATABASE_URL=postgres://nano_user:nano_password@db:5432/nano_ugin
       - DEBUG=True
 
 volumes:

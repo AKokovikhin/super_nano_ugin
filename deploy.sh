@@ -58,7 +58,7 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/nano_ugin
+      - DATABASE_URL=postgres://nano_user:nano_password@db:5432/nano_ugin
       - DEBUG=True
 
 volumes:
@@ -79,7 +79,7 @@ WORKDIR /app
 # Устанавливаем зависимости для PostgreSQL
 RUN apt-get update && apt-get install -y \
     gcc \
-    postgresql-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -87,7 +87,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-WORKDIR /app/nano_ugin
+WORKDIR /app
 
 EXPOSE 8000
 
