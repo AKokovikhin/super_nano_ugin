@@ -87,7 +87,7 @@ DATABASES = {
         'NAME': config('DB_NAME', default='nano_ugin'),
         'USER': config('DB_USER', default='nano_user'),
         'PASSWORD': config('DB_PASSWORD', default='nano_password'),
-        'HOST': config('DB_HOST', default='localhost'),
+        'HOST': config('DB_HOST', default='db'),
         'PORT': config('DB_PORT', default='5432'),
     }
 }
