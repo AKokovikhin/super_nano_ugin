@@ -1,4 +1,4 @@
-# Nano Ugin v2
+# Nano Ugin
 
 Django-приложение для управления оборудованием с REST API и Docker-развертыванием.
 
