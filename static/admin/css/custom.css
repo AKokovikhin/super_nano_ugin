@@ -1,0 +1,18 @@
+.hidden-field {
+    display: none !important;
+}
+
+.readonly {
+    background-color: #f8f9fa !important;
+    cursor: not-allowed !important;
+}
+
+.inline-related h3 {
+    background: #79aec8 !important;
+    color: white !important;
+    padding: 8px !important;
+}
+
+.required label {
+    font-weight: bold !important;
+}

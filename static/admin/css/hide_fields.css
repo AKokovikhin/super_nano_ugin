@@ -1,0 +1,10 @@
+.hidden-field {
+    display: none !important;
+}
+
+.form-row .field-value_text .hidden-field + label,
+.form-row .field-value_int .hidden-field + label,
+.form-row .field-value_float .hidden-field + label,
+.form-row .field-value_bool .hidden-field + label {
+    display: none !important;
+}

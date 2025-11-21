@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}Список устройств - Nano Ugin{% endblock %}
+
+{% block content %}
+<div id="app">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-server"></i> Оборудование</h1>
+            <p class="text-muted mb-0">Всего устройств: ${ devices.length }</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="viewMode" id="viewCards" 
+                       v-model="viewMode" value="cards" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="viewCards">
+                    <i class="fas fa-grip"></i> Карточки
+                </label>
+                
+                <input type="radio" class="btn-check" name="viewMode" id="viewList" 
+                       v-model="viewMode" value="list" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="viewList">
+                    <i class="fas fa-list"></i> Список
+                </label>
+            </div>
+            
+            <button v-if="userIsStaff" @click="addDevice" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Добавить
+            </button>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Тип устройства</label>
+                    <select v-model="selectedType" @change="loadDevices" class="form-select">
+                        <option value="">Все типы</option>
+                        <option v-for="type in deviceTypes" :value="type.id">${ type.name }</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Статус</label>
+                    <select v-model="selectedStatus" @change="loadDevices" class="form-select">
+                        <option value="">Все статусы</option>
+                        <option value="online">На сети</option>
+                        <option value="offline">Не на сети</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Поиск</label>
+                    <div class="input-group">
+                        <input type="text" v-model="searchQuery" @input="onSearchInput" 
+                               placeholder="Поиск по названию, серийному номеру..." 
+                               class="form-control">
+                        <button @click="clearFilters" class="btn btn-outline-secondary" 
+                                type="button" v-if="hasActiveFilters">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4" v-if="!loading">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>${ stats.online }</h4>
+                            <span>На сети</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-network-wired fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>${ stats.offline }</h4>
+                            <span>Не на сети</span>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-plug fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-2 text-muted">Загрузка устройств...</p>
+    </div>
+    <div v-else-if="devices.length === 0" class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">Устройства не найдены</h4>
+        <p class="text-muted">Попробуйте изменить параметры фильтрации</p>
+        <button @click="clearFilters" class="btn btn-primary" v-if="hasActiveFilters">
+            Сбросить фильтры
+        </button>
+    </div>
+    <div v-else-if="viewMode === 'cards'" class="row">
+        <div v-for="device in devices" :key="device.id" class="col-md-6 col-lg-4 mb-4">
+            <div class="card device-card h-100" :class="'status-' + device.status"
+                 @click="openDevice(device.id)" style="cursor: pointer;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title">${ device.name }</h5>
+                        <span class="badge" :class="getStatusBadgeClass(device.status)">
+                            ${ getStatusText(device.status) }
+                        </span>
+                    </div>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <i class="fas fa-tag"></i> ${ device.device_model.name }
+                    </h6>
+                    
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="fas fa-fingerprint"></i> ${ device.serial_number }
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-layer-group"></i> ${ device.device_model.device_type }
+                        </small>
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            ${ formatDate(device.created_at) }
+                        </small>
+                        <button v-if="userIsStaff" @click.stop="editDevice(device.id)" 
+                                class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-else class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Устройство</th>
+                            <th>Модель</th>
+                            <th>Тип</th>
+                            <th>Серийный номер</th>
+                            <th>Статус</th>
+                            <th>Дата создания</th>
+                            <th v-if="userIsStaff">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="device in devices" :key="device.id" 
+                            @click="openDevice(device.id)" style="cursor: pointer;"
+                            class="device-row">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator me-2" :class="'status-' + device.status"></div>
+                                    <strong>${ device.name }</strong>
+                                </div>
+                            </td>
+                            <td>${ device.device_model.name }</td>
+                            <td>
+                                <span class="badge bg-light text-dark">${ device.device_model.device_type }</span>
+                            </td>
+                            <td>
+                                <code>${ device.serial_number }</code>
+                            </td>
+                            <td>
+                                <span class="badge" :class="getStatusBadgeClass(device.status)">
+                                    ${ getStatusText(device.status) }
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">${ formatDate(device.created_at) }</small>
+                            </td>
+                            <td v-if="userIsStaff">
+                                <button @click.stop="editDevice(device.id)" 
+                                        class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const { createApp } = Vue;
+
+createApp({
+    delimiters: ['${', '}'],
+    data() {
+        return {
+            devices: [],
+            deviceTypes: [],
+            loading: true,
+            selectedType: '',
+            selectedStatus: '',
+            searchQuery: '',
+            searchTimeout: null,
+            viewMode: 'cards',
+            userIsStaff: {{ user.is_staff|yesno:"true,false" }}  
+        }
+    },
+    computed: {
+        hasActiveFilters() {
+            return this.selectedType || this.selectedStatus || this.searchQuery;
+        },
+        stats() {
+            return {
+                online: this.devices.filter(d => d.status === 'online').length,
+                offline: this.devices.filter(d => d.status === 'offline').length
+
+            };
+        }
+    },
+    mounted() {
+        this.loadDeviceTypes();
+        this.loadDevices();
+        
+        const savedViewMode = localStorage.getItem('deviceViewMode');
+        if (savedViewMode) {
+            this.viewMode = savedViewMode;
+        }
+    },
+    watch: {
+        viewMode(newMode) {
+            localStorage.setItem('deviceViewMode', newMode);
+        }
+    },
+    methods: {
+        async loadDeviceTypes() {
+            try {
+                const response = await axios.get('/api/device_types/');
+                this.deviceTypes = response.data.device_types;
+            } catch (error) {
+                console.error('Ошибка загрузки типов устройств:', error);
+            }
+        },
+        async loadDevices() {
+            this.loading = true;
+            try {
+                let url = '/api/devices/';
+                const params = new URLSearchParams();
+                
+                if (this.selectedType) params.append('type', this.selectedType);
+                if (this.selectedStatus) params.append('status', this.selectedStatus);
+                if (this.searchQuery) params.append('search', this.searchQuery);
+                
+                if (params.toString()) url += '?' + params.toString();
+                
+                const response = await axios.get(url);
+                this.devices = response.data.devices;
+            } catch (error) {
+                console.error('Ошибка загрузки устройств:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+        onSearchInput() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.loadDevices();
+            }, 500);
+        },
+        clearFilters() {
+            this.selectedType = '';
+            this.selectedStatus = '';
+            this.searchQuery = '';
+            this.loadDevices();
+        },
+        openDevice(deviceId) {
+            window.location.href = `/equipment/device/${deviceId}/`;
+        },
+        editDevice(deviceId) {
+            window.location.href = `/equipment/device/${deviceId}/edit-parameters/`;
+        },
+        addDevice() {
+            window.location.href = '/admin/equipment/device/add/';
+        },
+        getStatusBadgeClass(status) {
+            const classes = {
+                'online': 'bg-success',
+                'offline': 'bg-danger',
+            };
+            return `badge ${classes[status] || 'bg-secondary'}`;
+        },
+        getStatusText(status) {
+            const texts = {
+                'online': 'На сети',
+                'offline': 'Не на сети',
+            };
+            return texts[status] || status;
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        }
+    }
+}).mount('#app');
+</script>
+
+<style>
+.device-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #dee2e6;
+}
+
+.device-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.device-row:hover {
+    background-color: #f8f9fa;
+}
+
+.status-online { border-left: 4px solid #28a745; }
+.status-offline { border-left: 4px solid #dc3545; }
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-online .status-indicator { background-color: #28a745; }
+.status-offline .status-indicator { background-color: #dc3545; }
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-check:checked + .btn-outline-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+</style>
+{% endblock %}

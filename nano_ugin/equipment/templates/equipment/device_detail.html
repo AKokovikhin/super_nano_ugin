@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+
+{% block title %}Устройство - Nano Ugin{% endblock %}
+
+{% block content %}
+<div id="app">
+    <div v-if="loading" class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
+    <div v-else-if="error" class="alert alert-danger">
+        Ошибка загрузки устройства: ${ error }
+    </div>
+    <div v-else class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-microchip"></i> ${ device.name }
+                    </h5>
+                    <span class="badge" :class="getStatusBadgeClass(device.status)">
+                        ${ getStatusText(device.status) }
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="40%">Модель:</th>
+                                    <td>
+                                        <strong>${ device.device_model.name }</strong>
+                                        <br>
+                                        <small class="text-muted">${ device.device_type.name }</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Серийный номер:</th>
+                                    <td>
+                                        <code>${ device.serial_number }</code>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Статус:</th>
+                                    <td>
+                                        <span class="badge" :class="getStatusBadgeClass(device.status)">
+                                            ${ getStatusText(device.status) }
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <th width="40%">Создано:</th>
+                                    <td>${ formatDate(device.created_at) }</td>
+                                </tr>
+                                <tr>
+                                    <th>Обновлено:</th>
+                                    <td>${ formatDate(device.updated_at) }</td>
+                                </tr>
+                                <tr v-if="device.comment">
+                                    <th>Комментарий:</th>
+                                    <td>${ device.comment }</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-list"></i> Параметры устройства
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div v-if="device.parameters.length === 0" class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Нет параметров для отображения
+                    </div>
+                    <div v-else class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Параметр</th>
+                                    <th>Значение</th>
+                                    <th>Тип</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="param in device.parameters" :key="param.parameter_id">
+                                    <td>
+                                        <strong>${ param.name }</strong>
+                                    </td>
+                                    <td>
+                                        <span v-if="param.value !== null && param.value !== undefined" 
+                                              class="parameter-value">
+                                            ${ formatParameterValue(param) }
+                                        </span>
+                                        <span v-else class="text-muted">
+                                            <i>Не задано</i>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">${ getParameterTypeText(param.type) }</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-3" v-if="device.id">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cog"></i> Управление
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a :href="`/equipment/device/${device.id}/edit-parameters/`" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Редактировать параметры
+                        </a>
+                        <a :href="`/admin/equipment/device/${device.id}/change/`" class="btn btn-outline-secondary">
+                            <i class="fas fa-cog"></i> Редактировать в админке
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const { createApp } = Vue;
+
+createApp({
+    delimiters: ['${', '}'],
+    data() {
+        return {
+            device: {},
+            loading: true,
+            error: null,
+            deviceId: {{ device_id }}
+        }
+    },
+    computed: {
+        importantParameters() {
+            if (!this.device.parameters) return [];
+            const importantKeys = ['ip_address', 'mac_address', 'camera_number', 'port_count'];
+            return this.device.parameters.filter(param => 
+                importantKeys.includes(param.key) && param.value !== null
+            );
+        },
+        hasImportantParameters() {
+            return this.importantParameters.length > 0;
+        }
+    },
+    mounted() {
+        this.loadDevice();
+    },
+    methods: {
+        async loadDevice() {
+            this.loading = true;
+            this.error = null;
+            try {
+                const response = await axios.get(`/api/devices/${this.deviceId}/`);
+                this.device = response.data;
+            } catch (error) {
+                console.error('Ошибка загрузки устройства:', error);
+                this.error = error.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+        refreshDevice() {
+            this.loadDevice();
+        },
+        getStatusBadgeClass(status) {
+            const classes = {
+                'online': 'bg-success',
+                'offline': 'bg-danger',
+            };
+            return `badge ${classes[status] || 'bg-secondary'}`;
+        },
+        getStatusText(status) {
+            const texts = {
+                'online': 'На сети',
+                'offline': 'Не на сети',
+            };
+            return texts[status] || status;
+        },
+        getParameterTypeText(type) {
+            const texts = {
+                'text': 'Текст',
+                'integer': 'Число',
+                'float': 'Дробное',
+                'boolean': 'Да/Нет',
+                'date': 'Дата',
+                'datetime': 'Дата/время'
+            };
+            return texts[type] || type;
+        },
+        formatParameterValue(param) {
+            if (param.value === null || param.value === undefined) return null;
+            
+            if (param.type === 'boolean') {
+                return param.value ? '✅ Да' : '❌ Нет';
+            }
+            if (param.type === 'date' || param.type === 'datetime') {
+                return this.formatDate(param.value);
+            }
+            return param.value;
+        },
+        formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('ru-RU');
+        }
+    }
+}).mount('#app');
+</script>
+
+<style>
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-online { background-color: #28a745; }
+.status-offline { background-color: #dc3545; }
+
+
+.parameter-value {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #e9ecef;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+</style>
+{% endblock %}

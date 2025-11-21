@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление параметрами - Nano Ugin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cogs"></i> Управление параметрами</h1>
+    <a href="{% url 'equipment_web:parameter_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Добавить параметр
+    </a>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        {% if parameters %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Ключ</th>
+                        <th>Тип</th>
+                        <th>Типы устройств</th>
+                        <th>Обязательный</th>
+                        <th>Порядок</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parameter in parameters %}
+                    <tr>
+                        <td>
+                            <strong>{{ parameter.name }}</strong>
+                            {% if parameter.description %}
+                            <br><small class="text-muted">{{ parameter.description }}</small>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ parameter.key }}</code></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ parameter.get_parameter_type_display }}</span>
+                        </td>
+                        <td>
+                            {% for device_type in parameter.device_types.all %}
+                                <span class="badge bg-light text-dark mb-1">{{ device_type.name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if parameter.required %}
+                                <span class="badge bg-success">Да</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Нет</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ parameter.order }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'equipment_web:parameter_edit' parameter.id %}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'equipment_web:parameter_delete' parameter.id %}" 
+                                   class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Параметры не найдены</h4>
+            <p class="text-muted">Создайте первый параметр для системы</p>
+            <a href="{% url 'equipment_web:parameter_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Создать параметр
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

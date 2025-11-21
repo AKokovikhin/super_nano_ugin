@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Управление типами устройств - Nano Ugin{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>📋 Типы устройств</h1>
+    <p class="text-muted">Управление параметрами для каждого типа оборудования</p>
+    <div class="row">
+        {% for device_type in device_types %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ device_type.name }}</h5>
+                    <a href="{% url 'equipment_web:device_type_manage_parameters' device_type.id %}" 
+                       class="btn btn-warning btn-sm">
+                        ⚙️ Управление параметрами
+                    </a>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ device_type.description|default:"Описание отсутствует" }}</p>
+                    
+                    <h6>Связанные параметры:</h6>
+                    {% if device_type.parameters.all %}
+                    <div class="mb-3">
+                        {% for param in device_type.parameters.all %}
+                        <span class="badge bg-primary me-1 mb-1">{{ param.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-danger">❌ Нет связанных параметров</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
