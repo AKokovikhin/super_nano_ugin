@@ -150,18 +150,6 @@ createApp({
             deviceId: {{ device_id }}
         }
     },
-    computed: {
-        importantParameters() {
-            if (!this.device.parameters) return [];
-            const importantKeys = ['ip_address', 'mac_address', 'camera_number', 'port_count'];
-            return this.device.parameters.filter(param => 
-                importantKeys.includes(param.key) && param.value !== null
-            );
-        },
-        hasImportantParameters() {
-            return this.importantParameters.length > 0;
-        }
-    },
     mounted() {
         this.loadDevice();
     },
