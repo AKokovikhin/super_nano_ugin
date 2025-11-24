@@ -1,8 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import JsonResponse
-from .models import Device, DeviceType, DeviceModel, Parameter, ParameterValue
+from .models import Device, DeviceType, Parameter, ParameterValue
 
 def is_admin(user):
     return user.is_staff or user.is_superuser
@@ -56,7 +55,7 @@ def device_edit_parameters(request, device_id):
                 pv.save()
         
         messages.success(request, f'Параметры устройства "{device.name}" обновлены!')
-        return redirect('equipment_web:device_detail', device_id=device_id)
+        return redirect('equipment:device_detail', device_id=device_id)
     
     return render(request, 'equipment/device_edit_parameters.html', {
         'device': device,
@@ -82,7 +81,7 @@ def device_create_parameters(request, device_id):
         created_count += 1
     
     messages.success(request, f'Создано {created_count} параметров для устройства "{device.name}"')
-    return redirect('equipment_web:device_edit_parameters', device_id=device_id)
+    return redirect('equipment:device_edit_parameters', device_id=device_id)
 
 
 
@@ -104,7 +103,7 @@ def parameter_create(request):
         if form.is_valid():
             parameter = form.save()
             messages.success(request, f'Параметр "{parameter.name}" создан!')
-            return redirect('equipment_web:parameter_list')
+            return redirect('equipment:parameter_list')
     else:
         form = ParameterForm()
     
@@ -124,7 +123,7 @@ def parameter_edit(request, parameter_id):
         if form.is_valid():
             parameter = form.save()
             messages.success(request, f'Параметр "{parameter.name}" обновлён!')
-            return redirect('equipment_web:parameter_list')
+            return redirect('equipment:parameter_list')
     else:
         form = ParameterForm(instance=parameter)
     
@@ -143,7 +142,7 @@ def parameter_delete(request, parameter_id):
         name = parameter.name
         parameter.delete()
         messages.success(request, f'Параметр "{name}" удалён!')
-        return redirect('equipment_web:parameter_list')
+        return redirect('equipment:parameter_list')
     
     return render(request, 'equipment/parameter_confirm_delete.html', {
         'parameter': parameter
@@ -162,7 +161,7 @@ def device_type_manage_parameters(request, device_type_id):
         device_type.parameters.set(selected_parameter_ids)
         
         messages.success(request, f'Параметры для типа "{device_type.name}" обновлены!')
-        return redirect('equipment_web:device_type_manage_parameters', device_type_id=device_type_id)
+        return redirect('equipment:device_type_manage_parameters', device_type_id=device_type_id)
     
     return render(request, 'equipment/device_type_manage_parameters.html', {
         'device_type': device_type,
@@ -185,4 +184,4 @@ def device_delete(request, device_id):
     device = get_object_or_404(Device, id=device_id)
     ParameterValue.objects.filter(device=device).delete()
     device.delete()
-    return redirect('equipment_web:device_list')
+    return redirect('equipment:device_list')

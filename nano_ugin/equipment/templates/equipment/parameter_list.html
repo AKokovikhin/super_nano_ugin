@@ -4,12 +4,14 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-cogs"></i> Управление параметрами</h1>
-    <a href="{% url 'equipment_web:parameter_create' %}" class="btn btn-primary">
+    <div>
+        <h1 class="mb-1"><i class="fas fa-cogs"></i> Управление параметрами</h1>
+        <p class="text-muted mb-0">Доступно параметров: {{ parameters.count }}</p>
+    </div>
+    <a href="{% url 'equipment:parameter_create' %}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Добавить параметр
     </a>
 </div>
-
 {% if messages %}
     {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
@@ -63,11 +65,11 @@
                         <td>{{ parameter.order }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'equipment_web:parameter_edit' parameter.id %}" 
+                                <a href="{% url 'equipment:parameter_edit' parameter.id %}" 
                                    class="btn btn-outline-primary">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{% url 'equipment_web:parameter_delete' parameter.id %}" 
+                                <a href="{% url 'equipment:parameter_delete' parameter.id %}" 
                                    class="btn btn-outline-danger">
                                     <i class="fas fa-trash"></i>
                                 </a>
@@ -83,7 +85,7 @@
             <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
             <h4 class="text-muted">Параметры не найдены</h4>
             <p class="text-muted">Создайте первый параметр для системы</p>
-            <a href="{% url 'equipment_web:parameter_create' %}" class="btn btn-primary">
+            <a href="{% url 'equipment:parameter_create' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Создать параметр
             </a>
         </div>
